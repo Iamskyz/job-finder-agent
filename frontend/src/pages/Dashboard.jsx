@@ -573,7 +573,7 @@ export default function Dashboard() {
               <div className={`transition-all ${autoEnabled ? 'opacity-100' : 'opacity-50'}`}>
                 <label className="text-sm text-gray-400 mb-3 block">Search every:</label>
                 <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-                  {[1, 6, 12, 24, 48, 72].map((h) => (
+                  {[1, 2, 4, 6, 12, 24].map((h) => (
                     <button key={h} onClick={() => handleIntervalChange(h)}
                       className={`py-3 rounded-xl text-sm font-medium transition-all ${intervalHours === h ? 'bg-purple-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/5'}`}>
                       {h < 24 ? `${h}h` : `${h/24}d`}

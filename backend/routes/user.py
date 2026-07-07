@@ -116,9 +116,10 @@ def update_auto_search():
     enabled = data.get("enabled", False)
     interval_hours = data.get("interval_hours", 12)
 
-    # Validate interval (minimum 1 hour, maximum 72 hours)
-    if not isinstance(interval_hours, (int, float)) or interval_hours < 1 or interval_hours > 72:
-        return jsonify({"error": "Interval must be between 1 and 72 hours"}), 400
+    # Validate interval (must be one of the allowed values)
+    allowed_intervals = [1, 2, 4, 6, 12, 24]
+    if interval_hours not in allowed_intervals:
+        return jsonify({"error": f"Interval must be one of: {allowed_intervals} hours"}), 400
 
     # Calculate next_run time
     next_run = None
