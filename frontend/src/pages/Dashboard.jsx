@@ -233,7 +233,7 @@ export default function Dashboard() {
       await updateAutoSearch({ enabled: !autoEnabled, interval_hours: INTERVAL_HOURS })
       setAutoEnabled(!autoEnabled)
       if (!autoEnabled) {
-        toast.success('Daily auto-search enabled!')
+        toast.success('Auto-search enabled! First search running now — check your email shortly.')
         setTimeout(fetchNextRun, 500)
       } else {
         toast.success('Auto-search disabled')

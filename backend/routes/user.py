@@ -125,7 +125,7 @@ def update_auto_search():
     """Enable/disable auto-search and set interval."""
     from app import db, scheduler
     from datetime import datetime, timedelta
-    from services.scheduler_service import schedule_user_job, remove_user_job
+    from services.scheduler_service import schedule_user_job, remove_user_job, run_auto_search
 
     user_id = get_jwt_identity()
     data = request.json
@@ -164,10 +164,14 @@ def update_auto_search():
     if enabled:
         from datetime import timezone
         from app import scheduler
+        import threading
         user = db.users.find_one({"_id": ObjectId(user_id)})
         next_run_aware = next_run.replace(tzinfo=timezone.utc) if next_run else None
         schedule_user_job(scheduler, user_id, user, interval_hours, next_run_time=next_run_aware)
-        msg = f"Auto-search enabled. Will run every {interval_hours} hours."
+        # Run immediately once in background to verify it works
+        thread = threading.Thread(target=run_auto_search, args=[user_id], daemon=True)
+        thread.start()
+        msg = f"Auto-search enabled. Running first search now and sending email!"
     else:
         from app import scheduler
         remove_user_job(scheduler, user_id)
