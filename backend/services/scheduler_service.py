@@ -97,7 +97,7 @@ def schedule_user_job(scheduler, user_id: str, user: dict, interval_hours: float
         replace_existing=True,
         next_run_time=next_run_time,
     )
-    logger.info(f"Scheduled auto-search for {user.get('email', user_id)} every 2min (TEST), next run: {next_run_time}")
+    logger.info(f"Scheduled auto-search for {user.get('email', user_id)} every {interval_hours}h, next run: {next_run_time}")
 
 
 def remove_user_job(scheduler, user_id: str):
