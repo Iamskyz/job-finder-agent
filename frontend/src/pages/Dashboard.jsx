@@ -59,8 +59,6 @@ export default function Dashboard() {
   const [searchHistory, setSearchHistory] = useState([])
   const [historyLoading, setHistoryLoading] = useState(false)
 
-  const [testingAutoSearch, setTestingAutoSearch] = useState(false)
-
   // Fetch next run time and start countdown
   const fetchNextRun = async () => {
     try {
@@ -242,19 +240,6 @@ export default function Dashboard() {
       }
     } catch (err) {
       toast.error('Failed to update auto-search')
-    }
-  }
-
-  const handleTestAutoSearch = async () => {
-    setTestingAutoSearch(true)
-    try {
-      await API.post('/user/auto-search/test')
-      toast.success('Test triggered! Check your email in a few minutes.')
-      setTimeout(fetchNextRun, 2000)
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Test failed')
-    } finally {
-      setTestingAutoSearch(false)
     }
   }
 
@@ -597,16 +582,7 @@ export default function Dashboard() {
                 <p className="text-xs text-gray-500">Enable to receive daily job alerts automatically</p>
               )}
 
-              {autoEnabled && (
-                <button
-                  onClick={handleTestAutoSearch}
-                  disabled={testingAutoSearch}
-                  className="mt-5 w-full btn-secondary flex items-center justify-center gap-2 text-sm"
-                >
-                  {testingAutoSearch ? <Loader size={15} className="animate-spin" /> : <Zap size={15} />}
-                  {testingAutoSearch ? 'Running test...' : 'Test Now (send email immediately)'}
-                </button>
-              )}
+
             </div>
 
             {/* Status */}

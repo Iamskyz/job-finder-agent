@@ -53,27 +53,7 @@ def update_profile():
     return jsonify({"message": "Profile updated successfully"}), 200
 
 
-@user_bp.route("/auto-search/test", methods=["POST"])
-@jwt_required()
-def test_auto_search():
-    """Immediately trigger auto-search for the current user to test it works."""
-    from app import db
-    from services.scheduler_service import run_auto_search
-
-    user_id = get_jwt_identity()
-    user = db.users.find_one({"_id": ObjectId(user_id)})
-
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    if not user.get("auto_search", {}).get("enabled"):
-        return jsonify({"error": "Enable auto-search first"}), 400
-    if not user.get("job_preferences", {}).get("roles"):
-        return jsonify({"error": "Set your job preferences first"}), 400
-
-    run_auto_search(user_id)
-    return jsonify({"message": "Test run complete — check your email!"}), 200
-
-
+@user_bp.route("/preferences", methods=["PUT"])
 @jwt_required()
 def update_preferences():
     """Update user's job search preferences."""
