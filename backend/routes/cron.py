@@ -1,4 +1,4 @@
-"""Cron Route - Called by Vercel Cron every hour to run due auto-searches."""
+"""Cron Route - Called by Vercel Cron every hour to run due auto-searches. Also has debug email test route."""
 
 import os
 from datetime import datetime, timezone
@@ -50,3 +50,30 @@ def run_scheduled_searches():
         "users_processed": len(due_users),
         "results": results,
     }), 200
+
+
+@cron_bp.route("/test-email", methods=["GET"])
+def test_email():
+    """Debug route — sends a test email to verify Gmail config is working."""
+    secret = os.getenv("CRON_SECRET", "")
+    if secret:
+        auth = request.headers.get("authorization", "")
+        if auth != f"Bearer {secret}":
+            return jsonify({"error": "Unauthorized"}), 401
+
+    to_email = request.args.get("email")
+    if not to_email:
+        return jsonify({"error": "Pass ?email=your@email.com"}), 400
+
+    try:
+        from app import mail
+        from flask_mail import Message
+        msg = Message(
+            subject="Job Finder AI — Test Email",
+            recipients=[to_email],
+            body="If you received this, email sending is working correctly!",
+        )
+        mail.send(msg)
+        return jsonify({"status": "ok", "message": f"Test email sent to {to_email}"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "detail": str(e)}), 500
