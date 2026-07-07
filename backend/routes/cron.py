@@ -14,10 +14,12 @@ def run_scheduled_searches():
     Checks MongoDB for users whose next_run time has passed and runs their search.
     Secured by CRON_SECRET header.
     """
-    # Verify secret so only Vercel (or you) can trigger this
+    # Vercel sends Authorization: Bearer <CRON_SECRET> automatically
     secret = os.getenv("CRON_SECRET", "")
-    if secret and request.headers.get("x-cron-secret") != secret:
-        return jsonify({"error": "Unauthorized"}), 401
+    if secret:
+        auth = request.headers.get("authorization", "")
+        if auth != f"Bearer {secret}":
+            return jsonify({"error": "Unauthorized"}), 401
 
     from app import db
     from services.scheduler_service import run_auto_search
