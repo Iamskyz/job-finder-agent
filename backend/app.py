@@ -77,6 +77,11 @@ app.register_blueprint(user_bp, url_prefix="/api/user")
 app.register_blueprint(cron_bp, url_prefix="/api/cron")
 
 
+@app.route("/")
+def index():
+    return {"status": "ok", "message": "Job Finder API"}
+
+
 @app.route("/api/health")
 def health():
     db_status = "connected" if db is not None else "disconnected"
