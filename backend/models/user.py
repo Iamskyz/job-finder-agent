@@ -20,7 +20,7 @@ def create_user_document(name, email, password_hash):
         },
         "auto_search": {
             "enabled": False,
-            "interval_hours": 12,
+            "interval_hours": 24,
             "last_run": None,
             "job_id": None,
         },

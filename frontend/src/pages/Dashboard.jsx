@@ -43,9 +43,9 @@ export default function Dashboard() {
   const [locationInput, setLocationInput] = useState('')
 
   // Auto-search state
+  const INTERVAL_HOURS = 24
   const autoSearch = user?.auto_search || {}
   const [autoEnabled, setAutoEnabled] = useState(autoSearch.enabled || false)
-  const [intervalHours, setIntervalHours] = useState(autoSearch.interval_hours || 12)
   const [countdown, setCountdown] = useState(null)
   const [nextRunTime, setNextRunTime] = useState(null)
   const countdownRef = useRef(null)
@@ -72,7 +72,6 @@ export default function Dashboard() {
       }
       // Sync enabled state from server
       if (data?.enabled !== undefined) setAutoEnabled(data.enabled)
-      if (data?.interval_hours) setIntervalHours(data.interval_hours)
     } catch {
       // Server unreachable — stop timer, don't retry automatically
       setNextRunTime(null)
@@ -229,10 +228,10 @@ export default function Dashboard() {
 
   const handleAutoSearch = async () => {
     try {
-      await updateAutoSearch({ enabled: !autoEnabled, interval_hours: intervalHours })
+      await updateAutoSearch({ enabled: !autoEnabled, interval_hours: INTERVAL_HOURS })
       setAutoEnabled(!autoEnabled)
       if (!autoEnabled) {
-        toast.success(`Auto-search enabled (every ${intervalHours}h)`)
+        toast.success('Daily auto-search enabled!')
         setTimeout(fetchNextRun, 500)
       } else {
         toast.success('Auto-search disabled')
@@ -241,19 +240,6 @@ export default function Dashboard() {
       }
     } catch (err) {
       toast.error('Failed to update auto-search')
-    }
-  }
-
-  const handleIntervalChange = async (newInterval) => {
-    setIntervalHours(newInterval)
-    if (autoEnabled) {
-      try {
-        await updateAutoSearch({ enabled: true, interval_hours: newInterval })
-        toast.success(`Interval updated to ${newInterval} hours`)
-        setTimeout(fetchNextRun, 500)
-      } catch (err) {
-        toast.error('Failed to update interval')
-      }
     }
   }
 
@@ -562,40 +548,39 @@ export default function Dashboard() {
             <div className="glass-card p-8">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-xl font-bold flex items-center gap-2"><Clock className="text-purple-400" size={22} />Auto-Search</h3>
-                  <p className="text-gray-400 text-sm mt-1">Automatically search and email you new India-based jobs</p>
+                  <h3 className="text-xl font-bold flex items-center gap-2"><Clock className="text-purple-400" size={22} />Daily Auto-Search</h3>
+                  <p className="text-gray-400 text-sm mt-1">Get fresh India-based job matches emailed to you every day</p>
                 </div>
                 <button onClick={handleAutoSearch} className={`relative w-14 h-7 rounded-full transition-all ${autoEnabled ? 'bg-purple-600' : 'bg-white/10'}`}>
                   <div className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all ${autoEnabled ? 'left-8' : 'left-1'}`}></div>
                 </button>
               </div>
 
-              <div className={`transition-all ${autoEnabled ? 'opacity-100' : 'opacity-50'}`}>
-                <label className="text-sm text-gray-400 mb-3 block">Search every:</label>
-                <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-                  {[1, 2, 4, 6, 12, 24].map((h) => (
-                    <button key={h} onClick={() => handleIntervalChange(h)}
-                      className={`py-3 rounded-xl text-sm font-medium transition-all ${intervalHours === h ? 'bg-purple-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/5'}`}>
-                      {h < 24 ? `${h}h` : `${h/24}d`}
-                    </button>
-                  ))}
+              <div className="p-4 bg-white/5 rounded-xl flex items-center gap-4 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0">
+                  <Mail className="text-purple-400" size={20} />
                 </div>
-                {/* Countdown Timer */}
-                {autoEnabled && countdown && (
-                  <div className="mt-5 p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <Timer size={20} className="text-purple-400" />
-                      <div>
-                        <p className="text-sm text-gray-300">Next search in:</p>
-                        <p className="text-2xl font-bold text-purple-300 font-mono">{countdown}</p>
-                      </div>
+                <div>
+                  <p className="text-sm font-medium">Every 24 hours</p>
+                  <p className="text-xs text-gray-400">Jobs sent to {user?.notification_email || user?.email}</p>
+                </div>
+              </div>
+
+              {autoEnabled && countdown && (
+                <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <Timer size={20} className="text-purple-400" />
+                    <div>
+                      <p className="text-sm text-gray-300">Next search in:</p>
+                      <p className="text-2xl font-bold text-purple-300 font-mono">{countdown}</p>
                     </div>
                   </div>
-                )}
-                <p className="text-xs text-gray-500 mt-4">
-                  {autoEnabled ? `Jobs will be sent to ${user?.notification_email || user?.email}` : 'Enable auto-search to receive automatic job alerts'}
-                </p>
-              </div>
+                </div>
+              )}
+
+              {!autoEnabled && (
+                <p className="text-xs text-gray-500">Enable to receive daily job alerts automatically</p>
+              )}
             </div>
 
             {/* Status */}
@@ -603,7 +588,7 @@ export default function Dashboard() {
               <h4 className="font-semibold mb-3">Status</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-gray-400">Auto-search:</span><span className={autoEnabled ? 'text-green-400' : 'text-red-400'}>{autoEnabled ? 'Active' : 'Disabled'}</span></div>
-                <div className="flex justify-between"><span className="text-gray-400">Interval:</span><span className="text-gray-300">Every {intervalHours} hours</span></div>
+                <div className="flex justify-between"><span className="text-gray-400">Frequency:</span><span className="text-gray-300">Every 24 hours</span></div>
                 <div className="flex justify-between"><span className="text-gray-400">Notification email:</span><span className="text-gray-300">{user?.notification_email || user?.email}</span></div>
                 <div className="flex justify-between"><span className="text-gray-400">Filter:</span><span className="text-gray-300">India only (WFO + Remote India)</span></div>
                 {countdown && autoEnabled && <div className="flex justify-between"><span className="text-gray-400">Next run:</span><span className="text-purple-300 font-mono">{countdown}</span></div>}
