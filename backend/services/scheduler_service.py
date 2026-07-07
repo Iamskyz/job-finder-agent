@@ -13,75 +13,65 @@ logger = logging.getLogger(__name__)
 
 def run_auto_search(user_id: str):
     """Execute auto-search for a specific user."""
-    from app import db
+    from app import db, app
     from services.job_scraper import scrape_all_jobs
     from services.job_matcher import rank_jobs, remove_duplicates
     from services.email_service import send_job_alert_email
 
     try:
-        user = db.users.find_one({"_id": ObjectId(user_id)})
-        if not user:
-            logger.error(f"Auto-search: User {user_id} not found")
-            return
+        with app.app_context():
+            user = db.users.find_one({"_id": ObjectId(user_id)})
+            if not user:
+                logger.error(f"Auto-search: User {user_id} not found")
+                return
 
-        if not user.get("auto_search", {}).get("enabled", False):
-            logger.info(f"Auto-search disabled for user {user_id}")
-            return
+            if not user.get("auto_search", {}).get("enabled", False):
+                logger.info(f"Auto-search disabled for user {user_id}")
+                return
 
-        preferences = user.get("job_preferences", {})
-        if not preferences.get("roles"):
-            logger.warning(f"Auto-search: No roles set for user {user_id}")
-            return
+            preferences = user.get("job_preferences", {})
+            if not preferences.get("roles"):
+                logger.warning(f"Auto-search: No roles set for user {user_id}")
+                return
 
-        logger.info(f"Running auto-search for {user['email']}...")
+            logger.info(f"Running auto-search for {user['email']}...")
 
-        # Scrape
-        all_jobs = scrape_all_jobs(preferences)
-        if not all_jobs:
-            logger.info(f"Auto-search: No jobs found for {user['email']}")
-            return
+            all_jobs = scrape_all_jobs(preferences)
+            if not all_jobs:
+                logger.info(f"Auto-search: No jobs found for {user['email']}")
+                return
 
-        # Process
-        unique_jobs = remove_duplicates(all_jobs)
+            unique_jobs = remove_duplicates(all_jobs)
 
-        # Filter India-only jobs
-        from routes.jobs import filter_india_jobs
-        india_jobs = filter_india_jobs(unique_jobs, preferences)
+            from routes.jobs import filter_india_jobs
+            india_jobs = filter_india_jobs(unique_jobs, preferences)
 
-        ranked_jobs = rank_jobs(india_jobs, preferences) if india_jobs else []
-        if not ranked_jobs:
-            logger.info(f"Auto-search: No India-based jobs found for {user['email']}")
-            return
+            ranked_jobs = rank_jobs(india_jobs, preferences) if india_jobs else []
+            if not ranked_jobs:
+                logger.info(f"Auto-search: No India-based jobs found for {user['email']}")
+                return
 
-        # Send email
-        send_job_alert_email(user.get("notification_email", user["email"]), user["name"], ranked_jobs)
+            send_job_alert_email(user.get("notification_email", user["email"]), user["name"], ranked_jobs)
 
-        # Update last run time and next run time
-        next_run = datetime.utcnow() + timedelta(
-            hours=user.get("auto_search", {}).get("interval_hours", 12)
-        )
-        db.users.update_one(
-            {"_id": ObjectId(user_id)},
-            {
-                "$set": {
-                    "auto_search.last_run": datetime.utcnow(),
-                    "auto_search.next_run": next_run,
+            next_run = datetime.utcnow() + timedelta(
+                hours=user.get("auto_search", {}).get("interval_hours", 24)
+            )
+            db.users.update_one(
+                {"_id": ObjectId(user_id)},
+                {
+                    "$set": {
+                        "auto_search.last_run": datetime.utcnow(),
+                        "auto_search.next_run": next_run,
+                    },
+                    "$push": {
+                        "search_history": {
+                            "$each": [{"timestamp": datetime.utcnow(), "jobs_found": len(ranked_jobs), "type": "auto"}],
+                            "$slice": -20,
+                        }
+                    },
                 },
-                "$push": {
-                    "search_history": {
-                        "$each": [{
-                            "timestamp": datetime.utcnow(),
-                            "jobs_found": len(ranked_jobs),
-                            "type": "auto",
-                        }],
-                        "$slice": -20,
-                    }
-                },
-            },
-        )
-
-        logger.info(f"Auto-search complete for {user['email']}: {len(ranked_jobs)} jobs sent")
-
+            )
+            logger.info(f"Auto-search complete for {user['email']}: {len(ranked_jobs)} jobs sent")
     except Exception as e:
         logger.error(f"Auto-search failed for user {user_id}: {e}")
 
