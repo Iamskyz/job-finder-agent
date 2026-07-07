@@ -14,5 +14,11 @@
       "src": "/(.*)",
       "dest": "api/index.py"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/run-searches",
+      "schedule": "0 * * * *"
+    }
   ]
 }

@@ -125,6 +125,7 @@ npm run dev
 | `MAIL_DEFAULT_SENDER` | Your Gmail address |
 | `FRONTEND_URL` | Your Vercel frontend URL (add after frontend deploy) |
 | `VERCEL` | `1` |
+| `CRON_SECRET` | Any random secret string (secures the cron endpoint) |
 
 7. Deploy → copy the backend URL (e.g. `https://job-finder-backend.vercel.app`)
 
@@ -146,7 +147,7 @@ npm run dev
 
 Go back to your **backend** Vercel project → Settings → Environment Variables → update `FRONTEND_URL` to your frontend Vercel URL → **Redeploy**.
 
-> **Note on Auto-Search:** Vercel is serverless — APScheduler cannot run persistently. Auto-search settings are saved but the scheduler won't fire automatically. To enable auto-search on Vercel, set up a cron job (e.g. Vercel Cron, GitHub Actions, or cron-job.org) that calls `POST /api/jobs/search` with a valid JWT token on your desired interval. For full auto-search support, deploy the backend on **Render.com** or **Railway.app** instead.
+> **Auto-Search on Vercel:** The backend `vercel.json` includes a cron job that calls `GET /api/cron/run-searches` every hour. Vercel checks MongoDB for users whose `next_run` time has passed and only runs their search — so a user with a 12h interval only gets searched every 12h. Add `CRON_SECRET` to your Vercel backend env vars to secure the endpoint.
 
 ---
 
@@ -181,6 +182,7 @@ MAIL_USERNAME=you@gmail.com
 MAIL_PASSWORD=your-16-char-app-password
 MAIL_DEFAULT_SENDER=you@gmail.com
 FRONTEND_URL=http://localhost:5173
+CRON_SECRET=your-random-cron-secret
 # VERCEL=1   ← set this in Vercel dashboard, not locally
 ```
 
