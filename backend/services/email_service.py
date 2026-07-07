@@ -252,11 +252,15 @@ def send_job_alert_email(user_email: str, user_name: str, jobs: list) -> bool:
 
         html_content = build_premium_email_html(user_name, jobs)
 
+        plain_text = f"Hi {user_name},\n\nWe found {len(jobs)} jobs matching your profile.\nPlease view this email in an HTML-compatible email client to see the full job list.\n\nJob Finder AI\n"
+
         msg = Message(
-            subject=f"🚀 {len(jobs)} New Job Matches Found! - {datetime.now().strftime('%d %b %Y')}",
+            subject=f"Job Finder AI - {len(jobs)} New Job Matches ({datetime.now().strftime('%d %b %Y')})",
             recipients=[user_email],
             html=html_content,
+            body=plain_text,
         )
+        msg.reply_to = "noreply@jobfinderai.com"
 
         mail.send(msg)
         logger.info(f"Email sent to {user_email} with {len(jobs)} jobs")
